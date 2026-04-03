@@ -95,3 +95,86 @@ export interface User {
   image?: string;
   createdAt: Date;
 }
+
+// --- Billing Types ---
+
+export type PlanTier = "free" | "pro" | "enterprise";
+export type SubscriptionStatus =
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "trialing"
+  | "incomplete";
+
+export const PLAN_LIMITS = {
+  free: {
+    pipelineRunsPerMonth: 100,
+    agentMinutesPerMonth: 30,
+    githubRepos: 1,
+    teamMembers: 1,
+  },
+  pro: {
+    pipelineRunsPerMonth: 5000,
+    agentMinutesPerMonth: 500,
+    githubRepos: 10,
+    teamMembers: 5,
+  },
+  enterprise: {
+    pipelineRunsPerMonth: Infinity,
+    agentMinutesPerMonth: Infinity,
+    githubRepos: Infinity,
+    teamMembers: Infinity,
+  },
+} as const;
+
+export const PLAN_PRICES = {
+  free: 0,
+  pro: 4900, // cents
+  enterprise: 49900, // cents
+} as const;
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId?: string | null;
+  stripePriceId?: string | null;
+  tier: PlanTier;
+  status: SubscriptionStatus;
+  currentPeriodStart?: Date | null;
+  currentPeriodEnd?: Date | null;
+  cancelAtPeriodEnd: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UsageRecord {
+  id: string;
+  userId: string;
+  pipelineRunId?: string | null;
+  agentMinutes: number;
+  recordedAt: Date;
+}
+
+export interface Invoice {
+  id: string;
+  userId: string;
+  stripeInvoiceId: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  paidAt?: Date | null;
+  periodStart?: Date | null;
+  periodEnd?: Date | null;
+  createdAt: Date;
+}
+
+export interface BillingDashboard {
+  subscription: Subscription | null;
+  usage: {
+    pipelineRunsThisMonth: number;
+    agentMinutesThisMonth: number;
+  };
+  limits: (typeof PLAN_LIMITS)[PlanTier];
+  invoices: Invoice[];
+}
