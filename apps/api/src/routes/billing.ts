@@ -89,12 +89,20 @@ export async function billingRoutes(app: FastifyInstance) {
     return { tier, usage, limits };
   });
 
-  // Financial reporting — MRR, churn, revenue metrics (admin endpoint)
+  // Financial reporting — MRR, churn, revenue metrics (admin-only endpoint)
   app.get("/api/billing/metrics", async (request, reply) => {
     const user = await getSessionUser(
       request.headers as Record<string, string>
     );
     if (!user) return reply.code(401).send({ error: "Unauthorized" });
+
+    const adminEmails = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (!adminEmails.includes(user.email.toLowerCase())) {
+      return reply.code(403).send({ error: "Forbidden — admin access required" });
+    }
 
     const metrics = await getRevenueMetrics();
     return metrics;

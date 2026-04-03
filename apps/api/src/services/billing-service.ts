@@ -108,10 +108,15 @@ export async function createCheckoutSession(
   const priceId = getPriceIdForTier(tier);
   if (!priceId) throw new Error("Invalid tier for checkout");
 
+  const trialDays = Number(process.env.STRIPE_TRIAL_DAYS) || 0;
+
   const session = await stripe.checkout.sessions.create({
     customer: sub.stripeCustomerId,
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
+    ...(trialDays > 0 && {
+      subscription_data: { trial_period_days: trialDays },
+    }),
     success_url: `${process.env.WEB_URL || "http://localhost:3000"}/billing?success=true`,
     cancel_url: `${process.env.WEB_URL || "http://localhost:3000"}/billing?canceled=true`,
     metadata: { userId, tier },

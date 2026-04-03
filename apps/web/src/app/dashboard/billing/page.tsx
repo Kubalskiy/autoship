@@ -86,6 +86,11 @@ export default function BillingPage() {
           <div>
             <p className="text-sm text-gray-400">Current Plan</p>
             <p className="mt-1 text-2xl font-bold capitalize">{tier}</p>
+            {billing?.subscription?.status === "trialing" && (
+              <p className="mt-1 text-sm text-blue-400">
+                Trial active — your paid plan begins at the end of the trial period.
+              </p>
+            )}
             {billing?.subscription?.status === "past_due" && (
               <p className="mt-1 text-sm text-red-400">
                 Payment past due — please update your payment method.
