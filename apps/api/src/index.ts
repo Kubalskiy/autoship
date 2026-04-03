@@ -4,6 +4,8 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import { auth } from "./auth.js";
 import { toNodeHandler } from "better-auth/node";
+import { pipelineRoutes } from "./routes/pipelines.js";
+import { startWorker } from "./queue/worker.js";
 
 const app = Fastify({ logger: true });
 
@@ -36,6 +38,12 @@ app.get("/api/me", async (request, reply) => {
   }
   return { user: session.user };
 });
+
+// Pipeline CRUD + runs
+await app.register(pipelineRoutes);
+
+// Start BullMQ worker (in-process for simplicity)
+startWorker();
 
 const port = Number(process.env.PORT) || 3001;
 const host = process.env.HOST || "0.0.0.0";
