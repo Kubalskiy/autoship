@@ -111,6 +111,7 @@ export const invoices = pgTable("invoices", {
   amountCents: integer("amount_cents").notNull(),
   currency: text("currency").notNull().default("usd"),
   status: text("status").notNull(),
+  hostedInvoiceUrl: text("hosted_invoice_url"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
   periodStart: timestamp("period_start", { withTimezone: true }),
   periodEnd: timestamp("period_end", { withTimezone: true }),

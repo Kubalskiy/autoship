@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, type BillingDashboard } from "@/lib/api";
+import { useSearchParams } from "next/navigation";
+import { api, type BillingDashboard, type RevenueMetrics } from "@/lib/api";
 
 const PLAN_PRICES: Record<string, number> = {
   free: 0,
@@ -10,15 +11,49 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 export default function BillingPage() {
+  const searchParams = useSearchParams();
   const [billing, setBilling] = useState<BillingDashboard | null>(null);
+  const [metrics, setMetrics] = useState<RevenueMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "info";
+  } | null>(null);
+
+  useEffect(() => {
+    // Handle checkout redirect params
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+    if (success === "true") {
+      setToast({
+        message: "Subscription activated! Your plan has been upgraded.",
+        type: "success",
+      });
+    } else if (canceled === "true") {
+      setToast({ message: "Checkout was canceled.", type: "info" });
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     async function load() {
       try {
         const data = await api.billing.dashboard();
         setBilling(data);
+        // Try loading admin metrics (will 403 for non-admins)
+        try {
+          const m = await api.billing.metrics();
+          setMetrics(m);
+        } catch {
+          // Not an admin — ignore
+        }
       } catch {
         // API unavailable
       } finally {
@@ -75,6 +110,19 @@ export default function BillingPage() {
 
   return (
     <div>
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+            toast.type === "success"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : "border-blue-500/30 bg-blue-500/10 text-blue-400"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold">Billing</h1>
       <p className="mt-1 text-sm text-gray-400">
         Manage your subscription and monitor usage.
@@ -88,7 +136,8 @@ export default function BillingPage() {
             <p className="mt-1 text-2xl font-bold capitalize">{tier}</p>
             {billing?.subscription?.status === "trialing" && (
               <p className="mt-1 text-sm text-blue-400">
-                Trial active — your paid plan begins at the end of the trial period.
+                Trial active — your paid plan begins at the end of the trial
+                period.
               </p>
             )}
             {billing?.subscription?.status === "past_due" && (
@@ -101,13 +150,23 @@ export default function BillingPage() {
                 Cancels at end of current period
               </p>
             )}
+            {billing?.subscription?.currentPeriodEnd && (
+              <p className="mt-1 text-sm text-gray-500">
+                Current period ends{" "}
+                {new Date(
+                  billing.subscription.currentPeriodEnd
+                ).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-3xl font-bold">
               ${(PLAN_PRICES[tier] ?? 0) / 100}
-              <span className="text-base font-normal text-gray-400">
-                /mo
-              </span>
+              <span className="text-base font-normal text-gray-400">/mo</span>
             </p>
           </div>
         </div>
@@ -135,6 +194,10 @@ export default function BillingPage() {
           used={usage.agentMinutesThisMonth}
           limit={limits.agentMinutesPerMonth}
         />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <LimitCard label="GitHub Repos" limit={limits.githubRepos} />
+        <LimitCard label="Team Members" limit={limits.teamMembers} />
       </div>
 
       {/* Upgrade Options */}
@@ -200,9 +263,7 @@ export default function BillingPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-800 bg-gray-900/50">
                 <tr>
-                  <th className="px-4 py-3 font-medium text-gray-400">
-                    Date
-                  </th>
+                  <th className="px-4 py-3 font-medium text-gray-400">Date</th>
                   <th className="px-4 py-3 font-medium text-gray-400">
                     Amount
                   </th>
@@ -212,6 +273,7 @@ export default function BillingPage() {
                   <th className="px-4 py-3 font-medium text-gray-400">
                     Period
                   </th>
+                  <th className="px-4 py-3 font-medium text-gray-400" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -242,6 +304,18 @@ export default function BillingPage() {
                         ? `${new Date(inv.periodStart).toLocaleDateString()} — ${new Date(inv.periodEnd).toLocaleDateString()}`
                         : "—"}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      {inv.hostedInvoiceUrl && (
+                        <a
+                          href={inv.hostedInvoiceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-400 hover:text-blue-300"
+                        >
+                          View Invoice
+                        </a>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -249,6 +323,9 @@ export default function BillingPage() {
           </div>
         </div>
       )}
+
+      {/* Admin Metrics */}
+      {metrics && <AdminMetrics metrics={metrics} />}
     </div>
   );
 }
@@ -287,6 +364,20 @@ function UsageCard({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function LimitCard({ label, limit }: { label: string; limit: number }) {
+  const isUnlimited = !isFinite(limit);
+  return (
+    <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-400">{label}</p>
+        <p className="text-sm font-medium">
+          {isUnlimited ? "Unlimited" : limit.toLocaleString()}
+        </p>
+      </div>
     </div>
   );
 }
@@ -347,6 +438,82 @@ function PlanCard({
       >
         Upgrade to {name}
       </button>
+    </div>
+  );
+}
+
+function AdminMetrics({ metrics }: { metrics: RevenueMetrics }) {
+  return (
+    <div className="mt-10">
+      <h2 className="text-lg font-semibold">Revenue Metrics</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        Admin-only — live business metrics.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="MRR" value={metrics.mrrFormatted} />
+        <MetricCard
+          label="Revenue This Month"
+          value={`$${(metrics.revenueThisMonth.totalCents / 100).toFixed(2)}`}
+          sub={`${metrics.revenueThisMonth.invoiceCount} invoices`}
+        />
+        <MetricCard
+          label="Total Subscriptions"
+          value={String(metrics.subscriptions.total)}
+        />
+        <MetricCard
+          label="Churn Rate"
+          value={`${metrics.churnRate}%`}
+          sub={`${metrics.churnedThisMonth} canceled this month`}
+        />
+      </div>
+
+      {Object.keys(metrics.tierBreakdown).length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-gray-800">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-gray-800 bg-gray-900/50">
+              <tr>
+                <th className="px-4 py-3 font-medium text-gray-400">Tier</th>
+                <th className="px-4 py-3 font-medium text-gray-400">
+                  Active Subscriptions
+                </th>
+                <th className="px-4 py-3 font-medium text-gray-400">
+                  Revenue
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {Object.entries(metrics.tierBreakdown).map(([t, data]) => (
+                <tr key={t} className="hover:bg-gray-900/30">
+                  <td className="px-4 py-3 font-medium capitalize">{t}</td>
+                  <td className="px-4 py-3 text-gray-300">{data.count}</td>
+                  <td className="px-4 py-3 text-gray-300">
+                    ${(data.revenue / 100).toFixed(2)}/mo
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
+      <p className="text-sm text-gray-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold">{value}</p>
+      {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
     </div>
   );
 }

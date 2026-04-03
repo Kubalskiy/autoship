@@ -33,6 +33,7 @@ export const api = {
       }),
     portal: () =>
       apiFetch<{ url: string }>("/api/billing/portal", { method: "POST" }),
+    metrics: () => apiFetch<RevenueMetrics>("/api/billing/metrics"),
   },
 };
 
@@ -108,10 +109,27 @@ export interface Invoice {
   amountCents: number;
   currency: string;
   status: string;
+  hostedInvoiceUrl?: string | null;
   paidAt?: string | null;
   periodStart?: string | null;
   periodEnd?: string | null;
   createdAt: string;
+}
+
+export interface RevenueMetrics {
+  mrr: number;
+  mrrFormatted: string;
+  tierBreakdown: Record<string, { count: number; revenue: number }>;
+  subscriptions: {
+    total: number;
+    byStatus: Record<string, number>;
+  };
+  churnedThisMonth: number;
+  churnRate: number;
+  revenueThisMonth: {
+    totalCents: number;
+    invoiceCount: number;
+  };
 }
 
 export interface UsageData {

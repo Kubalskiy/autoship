@@ -137,6 +137,11 @@ async function migrate() {
 
   await sql`CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);`;
 
+  // Add hosted_invoice_url column to invoices (idempotent)
+  await sql`
+    ALTER TABLE invoices ADD COLUMN IF NOT EXISTS hosted_invoice_url TEXT;
+  `;
+
   // --- Analytics & streaming indexes ---
   await sql`CREATE INDEX IF NOT EXISTS idx_pipeline_runs_status ON pipeline_runs(status);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_step_logs_run_id_started_at ON step_logs(run_id, started_at);`;

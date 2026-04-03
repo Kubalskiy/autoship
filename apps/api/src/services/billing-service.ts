@@ -217,6 +217,7 @@ export async function upsertInvoice(data: {
   amountCents: number;
   currency: string;
   status: string;
+  hostedInvoiceUrl?: string | null;
   paidAt?: Date | null;
   periodStart?: Date | null;
   periodEnd?: Date | null;
@@ -233,6 +234,7 @@ export async function upsertInvoice(data: {
       .set({
         amountCents: data.amountCents,
         status: data.status,
+        hostedInvoiceUrl: data.hostedInvoiceUrl ?? existing.hostedInvoiceUrl,
         paidAt: data.paidAt,
       })
       .where(eq(invoices.stripeInvoiceId, data.stripeInvoiceId))

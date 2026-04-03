@@ -118,6 +118,7 @@ export async function webhookRoutes(app: FastifyInstance) {
               amountCents: inv.amount_paid,
               currency: inv.currency,
               status: "paid",
+              hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
               paidAt: new Date(),
               periodStart: inv.period_start
                 ? new Date(inv.period_start * 1000)
@@ -149,6 +150,7 @@ export async function webhookRoutes(app: FastifyInstance) {
               amountCents: inv.amount_due,
               currency: inv.currency,
               status: "failed",
+              hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
               periodStart: inv.period_start
                 ? new Date(inv.period_start * 1000)
                 : null,
