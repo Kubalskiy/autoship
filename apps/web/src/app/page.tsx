@@ -27,6 +27,12 @@ function NavBar() {
           >
             Open Source
           </Link>
+          <Link
+            href="#pricing"
+            className="text-sm text-gray-400 hover:text-white"
+          >
+            Pricing
+          </Link>
           <a
             href="https://github.com/autoship"
             target="_blank"
@@ -360,23 +366,131 @@ function OpenSourceSection() {
   );
 }
 
-function CloudSection() {
+function PricingSection() {
+  const plans = [
+    {
+      name: "Free",
+      price: "$0",
+      period: "forever",
+      description: "For solo builders and open-source projects",
+      features: [
+        "Unlimited self-hosted pipelines",
+        "Community support",
+        "All core features",
+        "MIT licensed",
+      ],
+      cta: "Get Started",
+      ctaHref: "https://github.com/autoship",
+      highlighted: false,
+    },
+    {
+      name: "Pro",
+      price: "$49",
+      period: "/month",
+      description: "For teams shipping with AI agents daily",
+      features: [
+        "Managed cloud hosting",
+        "Unlimited pipeline runs",
+        "Team collaboration",
+        "Priority support",
+        "Advanced analytics",
+      ],
+      cta: "Join Waitlist",
+      ctaHref: "#waitlist",
+      highlighted: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      description: "For organizations with compliance and scale needs",
+      features: [
+        "Dedicated infrastructure",
+        "SSO / SAML",
+        "SLA guarantees",
+        "Custom agent integrations",
+        "Onboarding support",
+      ],
+      cta: "Contact Us",
+      ctaHref: "#waitlist",
+      highlighted: false,
+    },
+  ];
+
   return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-4xl rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 p-12 text-center">
+    <section id="pricing" className="px-6 py-24">
+      <div className="mx-auto max-w-6xl text-center">
         <h2 className="text-3xl font-bold sm:text-4xl">
-          Or let us handle the infra.
+          Simple, transparent pricing.
         </h2>
         <p className="mt-4 text-lg text-gray-400">
-          Managed hosting. Team features. Priority support. Focus on building —
-          we&apos;ll keep AutoShip running.
+          Self-host for free, or let us handle the infra.
         </p>
-        <a
-          href="#waitlist"
-          className="mt-8 inline-block rounded-lg bg-gradient-to-r from-blue-500 to-emerald-500 px-8 py-3.5 text-sm font-semibold text-white hover:from-blue-400 hover:to-emerald-400"
-        >
-          Join the Cloud Beta Waitlist
-        </a>
+        <div className="mt-16 grid gap-8 sm:grid-cols-3">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative rounded-xl border p-8 text-left ${
+                plan.highlighted
+                  ? "border-blue-500 bg-gray-900"
+                  : "border-gray-800 bg-gray-900/50"
+              }`}
+            >
+              {plan.highlighted && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 px-4 py-1 text-xs font-semibold text-white">
+                  Most Popular
+                </span>
+              )}
+              <h3 className="text-xl font-semibold">{plan.name}</h3>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-4xl font-bold">{plan.price}</span>
+                {plan.period && (
+                  <span className="text-sm text-gray-400">{plan.period}</span>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-gray-400">{plan.description}</p>
+              <ul className="mt-6 space-y-3">
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-start gap-2 text-sm text-gray-300"
+                  >
+                    <svg
+                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.5 12.75l6 6 9-13.5"
+                      />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={plan.ctaHref}
+                target={plan.ctaHref.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  plan.ctaHref.startsWith("http")
+                    ? "noopener noreferrer"
+                    : undefined
+                }
+                className={`mt-8 block rounded-lg px-6 py-3 text-center text-sm font-semibold ${
+                  plan.highlighted
+                    ? "bg-white text-black hover:bg-gray-200"
+                    : "border border-gray-700 hover:border-gray-500 hover:bg-gray-800/50"
+                }`}
+              >
+                {plan.cta}
+              </a>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -456,7 +570,7 @@ export default function Home() {
       <FeaturesSection />
       <HowItWorksSection />
       <OpenSourceSection />
-      <CloudSection />
+      <PricingSection />
       <BuiltByAIBanner />
       <WaitlistSection />
       <Footer />
