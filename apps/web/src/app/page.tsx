@@ -8,7 +8,7 @@ function NavBar() {
         <Link href="/" className="text-xl font-bold tracking-tight">
           AutoShip
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="hidden items-center gap-6 sm:flex">
           <Link
             href="#features"
             className="text-sm text-gray-400 hover:text-white"
@@ -36,6 +36,12 @@ function NavBar() {
             GitHub
           </a>
         </div>
+        <a
+          href="#waitlist"
+          className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-gray-200 sm:hidden"
+        >
+          Join Beta
+        </a>
       </div>
     </nav>
   );

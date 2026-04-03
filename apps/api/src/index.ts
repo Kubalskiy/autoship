@@ -5,6 +5,7 @@ import cookie from "@fastify/cookie";
 import { auth } from "./auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { pipelineRoutes } from "./routes/pipelines.js";
+import { waitlistRoutes } from "./routes/waitlist.js";
 import { startWorker } from "./queue/worker.js";
 
 const app = Fastify({ logger: true });
@@ -41,6 +42,9 @@ app.get("/api/me", async (request, reply) => {
 
 // Pipeline CRUD + runs
 await app.register(pipelineRoutes);
+
+// Waitlist signup
+await app.register(waitlistRoutes);
 
 // Start BullMQ worker (in-process for simplicity)
 startWorker();

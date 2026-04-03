@@ -60,6 +60,14 @@ async function migrate() {
     );
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS waitlist_entries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT NOT NULL UNIQUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
   await sql`CREATE INDEX IF NOT EXISTS idx_pipeline_runs_pipeline_id ON pipeline_runs(pipeline_id);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_step_logs_run_id ON step_logs(run_id);`;
 
