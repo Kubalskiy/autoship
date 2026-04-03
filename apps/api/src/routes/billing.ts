@@ -8,6 +8,7 @@ import {
   createBillingPortalSession,
   getMonthlyUsage,
   listInvoices,
+  getRevenueMetrics,
 } from "../services/billing-service.js";
 
 async function getSessionUser(headers: Record<string, string>) {
@@ -86,5 +87,16 @@ export async function billingRoutes(app: FastifyInstance) {
     const limits = PLAN_LIMITS[tier];
 
     return { tier, usage, limits };
+  });
+
+  // Financial reporting — MRR, churn, revenue metrics (admin endpoint)
+  app.get("/api/billing/metrics", async (request, reply) => {
+    const user = await getSessionUser(
+      request.headers as Record<string, string>
+    );
+    if (!user) return reply.code(401).send({ error: "Unauthorized" });
+
+    const metrics = await getRevenueMetrics();
+    return metrics;
   });
 }

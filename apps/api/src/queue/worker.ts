@@ -11,6 +11,7 @@ import {
   executeAgent,
   resolveExecutionOrder,
 } from "../services/agent-orchestrator.js";
+import { recordUsage } from "../services/billing-service.js";
 import type { PipelineConfig } from "@autoship/shared";
 
 async function processPipelineJob(job: Job<PipelineJobData>) {
@@ -24,6 +25,7 @@ async function processPipelineJob(job: Job<PipelineJobData>) {
   }
 
   const config = pipeline.config as PipelineConfig;
+  const runStartTime = Date.now();
 
   // Mark run as running
   await updateRunStatus(runId, "running", { startedAt: new Date() });
@@ -71,8 +73,27 @@ async function processPipelineJob(job: Job<PipelineJobData>) {
 
     // Mark run as completed
     await updateRunStatus(runId, "completed", { completedAt: new Date() });
-    console.log(`[worker] Run ${runId} completed successfully`);
+
+    // Record usage — compute agent minutes from wall-clock duration (minimum 1 minute)
+    const durationMs = Date.now() - runStartTime;
+    const agentMinutes = Math.max(1, Math.ceil(durationMs / 60_000));
+    try {
+      await recordUsage(pipeline.ownerId, agentMinutes, runId);
+    } catch (usageErr) {
+      console.error(`[worker] Failed to record usage for run ${runId}:`, usageErr);
+    }
+
+    console.log(`[worker] Run ${runId} completed successfully (${agentMinutes} agent-min)`);
   } catch (err) {
+    // Record partial usage even for failed runs
+    const durationMs = Date.now() - runStartTime;
+    const agentMinutes = Math.max(1, Math.ceil(durationMs / 60_000));
+    try {
+      await recordUsage(pipeline.ownerId, agentMinutes, runId);
+    } catch (usageErr) {
+      console.error(`[worker] Failed to record usage for failed run ${runId}:`, usageErr);
+    }
+
     await updateRunStatus(runId, "failed", { completedAt: new Date() });
     console.error(`[worker] Run ${runId} failed:`, err);
     throw err;

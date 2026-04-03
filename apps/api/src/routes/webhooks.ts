@@ -32,7 +32,7 @@ export async function webhookRoutes(app: FastifyInstance) {
     try {
       event = stripe.webhooks.constructEvent(
         request.body as Buffer,
-        sig,
+        sig as string,
         STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
@@ -68,8 +68,8 @@ export async function webhookRoutes(app: FastifyInstance) {
           status: mapStripeStatus(sub.status),
           tier,
           stripePriceId: priceId,
-          currentPeriodStart: new Date(sub.current_period_start * 1000),
-          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          currentPeriodStart: new Date((sub as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((sub as any).current_period_end * 1000),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         });
         break;

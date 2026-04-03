@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import { db } from "../db/index.js";
 import { subscriptions, usageRecords, invoices } from "../db/schema.js";
 import { eq, and, gte, sql } from "drizzle-orm";
@@ -6,7 +7,7 @@ import {
   STRIPE_PRO_PRICE_ID,
   STRIPE_ENTERPRISE_PRICE_ID,
 } from "./stripe.js";
-import type { PlanTier } from "@autoship/shared";
+import { PLAN_LIMITS, PLAN_PRICES, type PlanTier } from "@autoship/shared";
 
 // --- Subscription CRUD ---
 
@@ -102,7 +103,7 @@ export async function createCheckoutSession(
   userId: string,
   email: string,
   tier: PlanTier
-) {
+): Promise<{ url: string | null }> {
   const sub = await getOrCreateSubscription(userId, email);
   const priceId = getPriceIdForTier(tier);
   if (!priceId) throw new Error("Invalid tier for checkout");
@@ -119,7 +120,7 @@ export async function createCheckoutSession(
   return session;
 }
 
-export async function createBillingPortalSession(userId: string) {
+export async function createBillingPortalSession(userId: string): Promise<{ url: string }> {
   const sub = await getSubscription(userId);
   if (!sub) throw new Error("No subscription found");
 
@@ -169,6 +170,40 @@ export async function getMonthlyUsage(userId: string) {
   };
 }
 
+// --- Usage Limits ---
+
+export async function checkUsageLimits(userId: string): Promise<{
+  allowed: boolean;
+  reason?: string;
+  usage: { pipelineRunsThisMonth: number; agentMinutesThisMonth: number };
+  limits: { pipelineRunsPerMonth: number; agentMinutesPerMonth: number };
+}> {
+  const sub = await getSubscription(userId);
+  const tier = (sub?.tier ?? "free") as PlanTier;
+  const limits = PLAN_LIMITS[tier];
+  const usage = await getMonthlyUsage(userId);
+
+  if (usage.pipelineRunsThisMonth >= limits.pipelineRunsPerMonth) {
+    return {
+      allowed: false,
+      reason: `Monthly pipeline run limit reached (${limits.pipelineRunsPerMonth} runs on ${tier} plan)`,
+      usage,
+      limits,
+    };
+  }
+
+  if (usage.agentMinutesThisMonth >= limits.agentMinutesPerMonth) {
+    return {
+      allowed: false,
+      reason: `Monthly agent minutes limit reached (${limits.agentMinutesPerMonth} minutes on ${tier} plan)`,
+      usage,
+      limits,
+    };
+  }
+
+  return { allowed: true, usage, limits };
+}
+
 // --- Invoices ---
 
 export async function upsertInvoice(data: {
@@ -211,4 +246,99 @@ export async function listInvoices(userId: string, limit = 12) {
     .where(eq(invoices.userId, userId))
     .orderBy(sql`${invoices.createdAt} desc`)
     .limit(limit);
+}
+
+// --- Financial Reporting ---
+
+export async function getRevenueMetrics() {
+  // MRR: sum of monthly prices for all active paid subscriptions
+  const mrrResult = await db
+    .select({
+      tier: subscriptions.tier,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, "active"),
+        sql`${subscriptions.tier} != 'free'`
+      )
+    )
+    .groupBy(subscriptions.tier);
+
+  let mrr = 0;
+  const tierBreakdown: Record<string, { count: number; revenue: number }> = {};
+  for (const row of mrrResult) {
+    const price = PLAN_PRICES[row.tier as PlanTier] ?? 0;
+    const revenue = row.count * price;
+    mrr += revenue;
+    tierBreakdown[row.tier] = { count: row.count, revenue };
+  }
+
+  // Subscription counts by status
+  const statusCounts = await db
+    .select({
+      status: subscriptions.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(subscriptions)
+    .groupBy(subscriptions.status);
+
+  const byStatus: Record<string, number> = {};
+  let totalSubscriptions = 0;
+  for (const row of statusCounts) {
+    byStatus[row.status] = row.count;
+    totalSubscriptions += row.count;
+  }
+
+  // Churn: canceled subscriptions this month
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const churnResult = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, "canceled"),
+        gte(subscriptions.updatedAt, startOfMonth)
+      )
+    );
+
+  const churnedThisMonth = churnResult[0]?.count ?? 0;
+
+  // Revenue this month from paid invoices
+  const revenueResult = await db
+    .select({
+      totalCents: sql<number>`coalesce(sum(${invoices.amountCents}), 0)::int`,
+      invoiceCount: sql<number>`count(*)::int`,
+    })
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.status, "paid"),
+        gte(invoices.paidAt, startOfMonth)
+      )
+    );
+
+  return {
+    mrr, // in cents
+    mrrFormatted: `$${(mrr / 100).toFixed(2)}`,
+    tierBreakdown,
+    subscriptions: {
+      total: totalSubscriptions,
+      byStatus,
+    },
+    churnedThisMonth,
+    churnRate: totalSubscriptions > 0
+      ? Math.round((churnedThisMonth / totalSubscriptions) * 10000) / 100
+      : 0,
+    revenueThisMonth: {
+      totalCents: revenueResult[0]?.totalCents ?? 0,
+      invoiceCount: revenueResult[0]?.invoiceCount ?? 0,
+    },
+  };
 }
