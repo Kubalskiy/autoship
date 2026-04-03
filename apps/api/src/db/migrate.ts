@@ -137,6 +137,11 @@ async function migrate() {
 
   await sql`CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);`;
 
+  // --- Analytics & streaming indexes ---
+  await sql`CREATE INDEX IF NOT EXISTS idx_pipeline_runs_status ON pipeline_runs(status);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_step_logs_run_id_started_at ON step_logs(run_id, started_at);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_pipelines_owner_id ON pipelines(owner_id);`;
+
   console.log("Migrations complete.");
   await sql.end();
 }
