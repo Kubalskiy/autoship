@@ -6,6 +6,8 @@ import { auth } from "./auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { pipelineRoutes } from "./routes/pipelines.js";
 import { waitlistRoutes } from "./routes/waitlist.js";
+import { billingRoutes } from "./routes/billing.js";
+import { webhookRoutes } from "./routes/webhooks.js";
 import { startWorker } from "./queue/worker.js";
 
 const app = Fastify({ logger: true });
@@ -45,6 +47,12 @@ await app.register(pipelineRoutes);
 
 // Waitlist signup
 await app.register(waitlistRoutes);
+
+// Billing routes (checkout, portal, usage dashboard)
+await app.register(billingRoutes);
+
+// Stripe webhooks (raw body parsing — registered in its own encapsulation scope)
+await app.register(webhookRoutes);
 
 // Start BullMQ worker (in-process for simplicity)
 startWorker();

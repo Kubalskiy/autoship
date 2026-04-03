@@ -71,6 +71,72 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS idx_pipeline_runs_pipeline_id ON pipeline_runs(pipeline_id);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_step_logs_run_id ON step_logs(run_id);`;
 
+  // --- Billing tables ---
+
+  await sql`
+    DO $$ BEGIN
+      CREATE TYPE subscription_status AS ENUM ('active', 'past_due', 'canceled', 'trialing', 'incomplete');
+    EXCEPTION WHEN duplicate_object THEN null;
+    END $$;
+  `;
+
+  await sql`
+    DO $$ BEGIN
+      CREATE TYPE plan_tier AS ENUM ('free', 'pro', 'enterprise');
+    EXCEPTION WHEN duplicate_object THEN null;
+    END $$;
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL,
+      stripe_customer_id TEXT NOT NULL,
+      stripe_subscription_id TEXT,
+      stripe_price_id TEXT,
+      tier plan_tier NOT NULL DEFAULT 'free',
+      status subscription_status NOT NULL DEFAULT 'active',
+      current_period_start TIMESTAMPTZ,
+      current_period_end TIMESTAMPTZ,
+      cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer_id ON subscriptions(stripe_customer_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription_id ON subscriptions(stripe_subscription_id);`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS usage_records (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL,
+      pipeline_run_id UUID,
+      agent_minutes INTEGER NOT NULL DEFAULT 0,
+      recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_usage_records_user_id_recorded_at ON usage_records(user_id, recorded_at);`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL,
+      stripe_invoice_id TEXT NOT NULL UNIQUE,
+      amount_cents INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      status TEXT NOT NULL,
+      paid_at TIMESTAMPTZ,
+      period_start TIMESTAMPTZ,
+      period_end TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);`;
+
   console.log("Migrations complete.");
   await sql.end();
 }
