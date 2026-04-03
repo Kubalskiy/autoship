@@ -183,6 +183,15 @@ steps:
 - **Validation**: Zod
 - **Build**: Turborepo
 
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Step-by-step setup for new users |
+| [API Reference](docs/api-reference.md) | All REST endpoints with request/response examples |
+| [CLI Reference](docs/cli-reference.md) | All CLI commands with usage examples |
+| [Configuration](docs/configuration.md) | Pipeline YAML schema, env vars, database schema |
+
 ## Development
 
 ```bash
