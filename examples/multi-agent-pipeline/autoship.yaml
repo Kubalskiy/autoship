@@ -1,0 +1,41 @@
+name: feature-builder
+description: Multi-agent pipeline with design, implement, test, and review stages
+steps:
+  - name: design
+    agent: claude
+    prompt: >
+      You are a software architect. Design a REST API for a bookmark manager
+      with CRUD endpoints. Output an OpenAPI-style specification in YAML
+      listing each endpoint, method, request body, and response schema.
+      Save it to `docs/api-spec.yaml`.
+
+  - name: implement
+    agent: claude
+    prompt: >
+      You are a backend engineer. Read the API spec in `docs/api-spec.yaml`
+      and implement the bookmark manager API using Fastify and TypeScript.
+      Use an in-memory array as the data store. Create route handlers in
+      `src/routes/bookmarks.ts` and register them in `src/app.ts`.
+    dependsOn:
+      - design
+
+  - name: test
+    agent: claude
+    prompt: >
+      You are a QA engineer. Write integration tests for the bookmark API
+      in `src/routes/bookmarks.test.ts` using Vitest and light-my-request
+      (Fastify's built-in test helper). Cover all CRUD operations, invalid
+      input, and 404 responses.
+    dependsOn:
+      - implement
+
+  - name: review
+    agent: claude
+    prompt: >
+      You are a senior code reviewer. Review all files created or modified
+      in this pipeline run. Check for correctness, error handling, naming
+      conventions, and potential security issues. Write a review summary
+      to `docs/review.md` with actionable feedback.
+    dependsOn:
+      - implement
+      - test

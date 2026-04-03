@@ -1,0 +1,44 @@
+name: ci-cd-on-push
+description: Pipeline triggered by a GitHub webhook that lints, tests, and deploys
+steps:
+  - name: lint
+    agent: claude
+    prompt: >
+      Run the project linter with `npm run lint`. If there are lint errors,
+      fix them automatically and report what was changed. If the project
+      has no lint script, add one using ESLint with the TypeScript plugin.
+
+  - name: typecheck
+    agent: claude
+    prompt: >
+      Run `npx tsc --noEmit` to verify the project has no type errors.
+      If type errors are found, fix them and list each fix.
+
+  - name: test
+    agent: claude
+    prompt: >
+      Run the project test suite with `npm test`. If any tests fail,
+      investigate the failures and apply fixes. Report the final
+      pass/fail summary.
+    dependsOn:
+      - lint
+      - typecheck
+
+  - name: build
+    agent: claude
+    prompt: >
+      Run `npm run build` to produce a production build. Verify the
+      output directory exists and contains the expected artifacts.
+      Report the build size summary.
+    dependsOn:
+      - test
+
+  - name: deploy
+    agent: claude
+    prompt: >
+      Deploy the build artifacts. Run `npm run deploy` if the script
+      exists, otherwise output the deployment instructions for the
+      target platform detected from the project configuration
+      (e.g., Vercel, Fly.io, Docker).
+    dependsOn:
+      - build

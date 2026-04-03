@@ -19,6 +19,11 @@ program
     "Output file path",
     "autoship.yaml"
   )
+  .option(
+    "-t, --template <template>",
+    "Starter template (basic, multi-agent, cicd)",
+    "basic"
+  )
   .action(initCommand);
 
 program

@@ -1,0 +1,17 @@
+name: basic-code-gen
+description: Simple single-agent pipeline that generates a utility function with tests
+steps:
+  - name: generate
+    agent: claude
+    prompt: >
+      Write a TypeScript utility function called `slugify` that converts
+      a string into a URL-friendly slug. Handle unicode, multiple spaces,
+      and leading/trailing hyphens. Export it from `src/slugify.ts`.
+  - name: test
+    agent: claude
+    prompt: >
+      Write Vitest tests for the `slugify` function in `src/slugify.test.ts`.
+      Cover edge cases: empty string, unicode characters, multiple spaces,
+      special characters, and already-valid slugs.
+    dependsOn:
+      - generate
