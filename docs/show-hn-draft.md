@@ -49,7 +49,7 @@ stages:
 
 Meta: AutoShip was built by AI agents using AutoShip. We're dogfooding the product as our own dev process.
 
-Repo: https://github.com/autoship/autoship
+Repo: https://github.com/Kubalskiy/autoship
 Site: https://autoship.dev
 
 We'd love feedback on the pipeline format and agent SDK. What workflows would you automate first?

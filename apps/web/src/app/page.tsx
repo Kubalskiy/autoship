@@ -34,7 +34,7 @@ function NavBar() {
             Pricing
           </Link>
           <a
-            href="https://github.com/autoship"
+            href="https://github.com/Kubalskiy/autoship"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium hover:border-gray-500 hover:bg-gray-800/50"
@@ -78,7 +78,7 @@ function HeroSection() {
           Join the Beta Waitlist
         </a>
         <a
-          href="https://github.com/autoship"
+          href="https://github.com/Kubalskiy/autoship"
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-lg border border-gray-700 px-8 py-3.5 text-sm font-semibold hover:border-gray-500 hover:bg-gray-800/50"
@@ -350,7 +350,7 @@ function OpenSourceSection() {
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
-            href="https://github.com/autoship"
+            href="https://github.com/Kubalskiy/autoship"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-gray-200"
@@ -381,7 +381,7 @@ function PricingSection() {
         "Self-hosted, MIT licensed",
       ],
       cta: "Get Started",
-      ctaHref: "https://github.com/autoship",
+      ctaHref: "https://github.com/Kubalskiy/autoship",
       highlighted: false,
     },
     {
@@ -545,7 +545,7 @@ function Footer() {
           </p>
         </div>
         <div className="flex gap-6 text-sm text-gray-400">
-          <a href="https://github.com/autoship" target="_blank" rel="noopener noreferrer" className="hover:text-white">
+          <a href="https://github.com/Kubalskiy/autoship" target="_blank" rel="noopener noreferrer" className="hover:text-white">
             GitHub
           </a>
           <a href="https://twitter.com/autoshipdev" target="_blank" rel="noopener noreferrer" className="hover:text-white">

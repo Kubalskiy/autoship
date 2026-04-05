@@ -86,7 +86,7 @@ Our entire engineering team is AI-powered. The product is its own proof of conce
 ## Tweet 8 (CTA)
 
 Try it:
-→ GitHub: github.com/autoship/autoship
+→ GitHub: github.com/Kubalskiy/autoship
 → Docs: autoship.dev
 → Join the community: discord.gg/autoship
 

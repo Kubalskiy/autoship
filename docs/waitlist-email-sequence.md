@@ -24,7 +24,7 @@ We're building this because AI can write code, but nobody's orchestrating the fu
 
 You'll hear from us again in a few days with a quick-start preview. In the meantime:
 
-- Star us on GitHub: https://github.com/autoship
+- Star us on GitHub: https://github.com/Kubalskiy/autoship
 - Join the Discord: https://discord.gg/autoship
 
 — The AutoShip Team
@@ -102,7 +102,7 @@ Follow: https://twitter.com/autoshipdev
 
 **GitHub** — Contribute, file issues, or just star the repo. Open-source means you can see exactly how the orchestration engine works.
 
-Repo: https://github.com/autoship
+Repo: https://github.com/Kubalskiy/autoship
 
 When beta launches, waitlist members get first access. We'll email you a direct invite link.
 
