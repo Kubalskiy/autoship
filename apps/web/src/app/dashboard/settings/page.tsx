@@ -3,33 +3,37 @@
 const integrations = [
   {
     name: "GitHub",
-    description: "Connect your GitHub account to link repos and enable CI/CD pipelines.",
+    description: "Create an organization and repo for the AutoShip open-source project.",
     icon: GitHubIcon,
-    authUrl: "https://github.com/login/oauth/authorize?client_id=YOUR_CLIENT_ID&scope=repo,read:org",
+    authUrl: "https://github.com/organizations/plan",
+    linkLabel: "Create GitHub Org",
     connected: false,
     category: "development",
   },
   {
     name: "Twitter / X",
-    description: "Connect your Twitter/X account to post launch updates and engage with the dev community.",
+    description: "Create the @autoshipdev account to post launch updates and engage with the dev community.",
     icon: TwitterIcon,
-    authUrl: "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=YOUR_CLIENT_ID&scope=tweet.read+tweet.write+users.read",
+    authUrl: "https://x.com/i/flow/signup",
+    linkLabel: "Sign Up on X",
     connected: false,
     category: "social",
   },
   {
     name: "Discord",
-    description: "Connect your Discord server for community notifications and bot integration.",
+    description: "Create a Discord server for the AutoShip developer community.",
     icon: DiscordIcon,
-    authUrl: "https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2048&scope=bot+applications.commands",
+    authUrl: "https://discord.com/login",
+    linkLabel: "Open Discord",
     connected: false,
     category: "social",
   },
   {
     name: "Instagram",
-    description: "Connect Instagram for visual content and product updates.",
+    description: "Create an Instagram account for visual content and product updates.",
     icon: InstagramIcon,
-    authUrl: "https://api.instagram.com/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT&scope=user_profile,user_media&response_type=code",
+    authUrl: "https://www.instagram.com/accounts/emailsignup/",
+    linkLabel: "Sign Up on Instagram",
     connected: false,
     category: "social",
   },
@@ -95,7 +99,10 @@ export default function SettingsPage() {
               <p className="mt-2 text-sm text-gray-400">
                 {provider.description}
               </p>
-              <span className="mt-4 inline-block text-sm font-medium text-blue-400 group-hover:text-blue-300">
+              <p className="mt-2 text-xs text-gray-600 break-all">
+                {provider.url}
+              </p>
+              <span className="mt-3 inline-block text-sm font-medium text-blue-400 group-hover:text-blue-300">
                 Open {provider.name} &rarr;
               </span>
             </a>
@@ -122,6 +129,9 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-400">
                     {integration.description}
                   </p>
+                  <p className="mt-1 text-xs text-gray-600 break-all">
+                    {integration.authUrl}
+                  </p>
                 </div>
               </div>
               <a
@@ -134,7 +144,7 @@ export default function SettingsPage() {
                     : "bg-white text-black hover:bg-gray-200"
                 }`}
               >
-                {integration.connected ? "Connected" : "Connect"}
+                {integration.connected ? "Connected" : integration.linkLabel}
               </a>
             </div>
           ))}
